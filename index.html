@@ -176,6 +176,7 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
 <div id="cApp" class="capp" hidden>
   <div class="chead"><div class="logo"><svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="14" fill="#c6e35a"/><path d="M12 18l12-6 12 6-12 6-12-6z" fill="#0d3b2b"/><path d="M12 18v13l12 6V24z" fill="#0d3b2b" opacity=".75"/><path d="M36 18v13l-12 6V24z" fill="#0d3b2b" opacity=".5"/></svg><div><b>أوردراتي</b><small id="cName"></small></div></div><button class="ghost sm" id="cOut">خروج</button></div>
   <div class="ckp"><div>أوردرات معايا<b id="ck1">0</b></div><div>اتسلّم<b id="ck2">0</b></div><div>المطلوب تحصيله<b id="ck3">0</b></div></div>
+  <div class="card" style="padding:16px"><h3 style="margin-bottom:8px">رصيدي</h3><div class="ckp" style="margin:0"><div>النهارده<b id="cb1">0</b></div><div>الشهر ده<b id="cb2">0</b></div><div>أوردرات الشهر<b id="cb3">0</b></div></div><p class="hint" id="cbH" style="margin:8px 0 0"></p></div>
   <div class="card">
     <h3>خط السير</h3>
     <label>هبدأ منين؟<select id="cStart"></select></label>
@@ -195,6 +196,7 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
     <a href="#new" data-t="new"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="4" y="3" width="16" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>بوليصة جديدة</a>
     <a href="#orders" data-t="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7M12 11v10"/></svg>الأوردرات</a>
     <a href="#closing" data-t="closing"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4M8.5 15l2.5 2.5 4.5-5"/></svg>التقفيل اليومي</a>
+    <a href="#earn" data-t="earn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/><path d="M17 3.5l1.5 1.5L21 2.5"/></svg>رصيد المندوب</a>
     <a href="#settings" data-t="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>الإعدادات</a>
   </nav>
   <div class="ft"><button class="ghost sm" id="aOut" style="color:#fff;border-color:rgba(255,255,255,.3);margin-bottom:10px">تسجيل خروج</button><br>توصيل نفس اليوم بمندوبك</div>
@@ -293,6 +295,25 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
     </div>
   </section>
 
+  <section id="v-earn">
+    <div class="card">
+      <h2>رصيد المندوب</h2>
+      <div class="filters">
+        <label>المندوب<select id="e-c"></select></label>
+        <label>من<input type="date" id="e-from"></label>
+        <label>لحد<input type="date" id="e-to"></label>
+        <button class="ghost" id="e-month">الشهر ده</button>
+        <button class="ghost" id="e-today">النهارده</button>
+      </div>
+      <div class="sum" id="eSum"></div>
+      <p class="hint" id="eHint"></p>
+    </div>
+    <div class="card">
+      <h3>تفاصيل كل يوم</h3>
+      <div class="scroll"><table class="stack" id="tE"></table></div>
+    </div>
+  </section>
+
   <section id="v-settings">
     <form class="card" id="sf">
       <h2>الإعدادات</h2>
@@ -344,7 +365,7 @@ const LOGO='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAeAAAAB2CAYAAAAQnEB/AA
 const ST={new:['جديد','s-new'],out:['مع المندوب','s-out'],done:['تم التسليم','s-done'],ret:['مرتجع','s-ret'],post:['مؤجل','s-post'],cancel:['ملغي','s-cancel']};
 const pill=s=>`<span class="pill ${ST[s]?.[1]||''}">${ST[s]?.[0]||s}</span>`;
 const GOV='القاهرة الجيزة الإسكندرية القليوبية الشرقية الدقهلية الغربية المنوفية البحيرة كفر_الشيخ دمياط بورسعيد الإسماعيلية السويس الفيوم بني_سويف المنيا أسيوط سوهاج قنا الأقصر أسوان'.split(' ').map(x=>x.replace('_',' '));
-let S={brand:'مودرن سواك',brandEn:'Modern Siwak',phone:'',address:'',prefix:'MS',ship:0,cfee:0,size:'10x15',starts:''};
+let S={brand:'مودرن سواك',brandEn:'Modern Siwak',phone:'',address:'',prefix:'MS',ship:0,cfee:80,size:'10x15',starts:''};
 let P=[],ME=null,sb=null;
 let O=[],C=[],db=null,dl=null,editing=null,settle={},handSel=new Set(),sel=new Set(),view='new';
 const LS={get(k,d){try{return JSON.parse(localStorage.getItem('msw_'+k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem('msw_'+k,JSON.stringify(v))}catch(e){}}};
@@ -545,7 +566,7 @@ async function doSettle(){
   try{
     const rows=[],up=X.map(o=>{const r={st:'done',amt:o.total,why:'',...settle[o.id]};rows.push({no:o.no,name:o.name,total:o.total,st:r.st,amt:num(r.amt),why:r.why});
       const {report,...b}=o;if(r.st==='post')return {...b,status:'new',date:addDay(d,1),postponed:(o.postponed||0)+1,lastNote:r.why};
-      return {...b,status:r.st,collected:num(r.amt),settledAt:Date.now(),lastNote:r.why}});
+      return {...b,status:r.st,collected:num(r.amt),settledAt:Date.now(),lastNote:r.why,cfee:r.st==='done'?num(S.cfee):0}});
     await putOrders(up);
     const x={id:`${d}_${hash(c)}_${Date.now().toString(36)}`,date:d,courier:c,at:Date.now(),rows,...t};
     await putClosing(x);X.forEach(o=>delete settle[o.id]);
@@ -576,7 +597,25 @@ const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function count(sel,v,isM){const e=$(sel),f=isM?money:x=>Math.round(x).toLocaleString('en-US'),from=num(e.dataset.v);e.dataset.v=v;
   if(RM||from===v){e.textContent=f(v);return}const t0=performance.now();cancelAnimationFrame(e._r);
   const step=t=>{const p=Math.min(1,(t-t0)/700),k=1-Math.pow(1-p,3);e.textContent=f(from+(v-from)*k);if(p<1)e._r=requestAnimationFrame(step)};e._r=requestAnimationFrame(step)}
-const TITLES={new:'بوليصة جديدة',orders:'الأوردرات',closing:'التقفيل اليومي',settings:'الإعدادات'};
+const TITLES={new:'بوليصة جديدة',orders:'الأوردرات',closing:'التقفيل اليومي',earn:'رصيد المندوب',settings:'الإعدادات'};
+const feeOf=o=>o.cfee!=null?num(o.cfee):num(S.cfee);
+const monthStart=()=>today().slice(0,8)+'01';
+function renderEarn(){
+  const es=$('#e-c'),cv=es.value,cs=couriers();
+  es.innerHTML='<option value="">كل المناديب</option>'+cs.map(c=>`<option>${esc(c)}</option>`).join('');if(cs.includes(cv))es.value=cv;
+  if(!$('#e-from').value)$('#e-from').value=monthStart();if(!$('#e-to').value)$('#e-to').value=today();
+  const c=es.value,f=$('#e-from').value,t=$('#e-to').value;
+  const L=O.filter(o=>o.status==='done'&&o.courier&&(!c||o.courier===c)&&o.date>=f&&o.date<=t);
+  const P2=O.filter(o=>o.status==='out'&&o.report?.st==='done'&&(!c||o.courier===c));
+  const earn=L.reduce((s,o)=>s+feeOf(o),0),col=L.reduce((s,o)=>s+num(o.collected),0),ret=O.filter(o=>o.status==='ret'&&(!c||o.courier===c)&&o.date>=f&&o.date<=t).length;
+  $('#eSum').innerHTML=`<div>أوردرات اتسلّمت<b>${L.length}</b></div><div>مرتجع<b>${ret}</b></div><div>المحصّل<b>${money(col)}</b></div><div class="due">رصيد المندوب (${money(S.cfee)} للأوردر)<b>${money(earn)}</b></div><div>صافي ليك بعد أجرته<b>${money(col-earn)}</b></div>`;
+  $('#eHint').textContent=(P2.length?`فيه ${P2.length} أوردر المندوب علّمهم اتسلّموا ولسه ما اتقفلوش — هيدخلوا الرصيد بعد التقفيل (${money(P2.reduce((s,o)=>s+num(S.cfee),0))}). `:'')+'الرصيد بيتحسب من الأوردرات اللي اتقفلت "تم التسليم".';
+  const g={};L.forEach(o=>{const k=o.date+'|'+o.courier;(g[k]=g[k]||{d:o.date,c:o.courier,n:0,e:0,col:0});g[k].n++;g[k].e+=feeOf(o);g[k].col+=num(o.collected)});
+  const rows=Object.values(g).sort((a,b)=>b.d.localeCompare(a.d)||a.c.localeCompare(b.c));
+  $('#tE').innerHTML=`<thead><tr><th>اليوم</th><th>المندوب</th><th class="n">اتسلّم</th><th class="n">رصيده</th><th class="n">المحصّل</th><th class="n">صافي ليك</th></tr></thead><tbody>`+
+   (rows.length?rows.map(r=>`<tr><td>${esc(fmtD(r.d))}</td><td>${esc(r.c)}</td><td class="n">${r.n}</td><td class="n"><b>${money(r.e)}</b></td><td class="n">${money(r.col)}</td><td class="n">${money(r.col-r.e)}</td></tr>`).join('')
+   :`<tr><td colspan="6" class="empty">مفيش أوردرات اتقفلت "تم التسليم" في الفترة دي.</td></tr>`)+'</tbody>';
+}
 function render(){
   $('#brandT').textContent=S.brand||'مودرن سواك';
   const d=today(),T=O.filter(o=>o.date===d);
@@ -585,10 +624,10 @@ function render(){
   count('#k4',O.filter(o=>o.settledAt&&new Date(o.settledAt).toLocaleDateString('en-CA')===d).reduce((s,o)=>s+num(o.collected),0),true);
   courierOpts();
   $('#areas').innerHTML=[...new Set([...O.map(o=>o.area).filter(Boolean),...GOV])].map(a=>`<option value="${esc(a)}">`).join('');
-  if(view==='orders')renderOrders();if(view==='closing')renderClosing();if(view==='new')preview();
+  if(view==='orders')renderOrders();if(view==='closing')renderClosing();if(view==='earn')renderEarn();if(view==='new')preview();
 }
 function route(){
-  view=(location.hash||'#new').slice(1);if(!['new','orders','closing','settings'].includes(view))view='new';
+  view=(location.hash||'#new').slice(1);if(!['new','orders','closing','earn','settings'].includes(view))view='new';
   $$('section').forEach(s=>s.classList.toggle('on',s.id==='v-'+view));$('#pgT').textContent=TITLES[view];$$('nav a').forEach(a=>a.classList.toggle('on',a.dataset.t===view));
   if(view==='settings')fillSettings();render();
 }
@@ -635,6 +674,9 @@ $('#todayT').textContent=new Date().toLocaleDateString('ar-EG',{weekday:'long',d
 $('#q-date').value=today();$('#c-date').value=today();
 ST&&($('#q-st').innerHTML+=Object.entries(ST).map(([k,v])=>`<option value="${k}">${v[0]}</option>`).join(''));
 courierOpts();resetForm(false);route();
+['#e-c','#e-from','#e-to'].forEach(s=>$(s).addEventListener('input',renderEarn));
+$('#e-month').onclick=()=>{$('#e-from').value=monthStart();$('#e-to').value=today();renderEarn()};
+$('#e-today').onclick=()=>{$('#e-from').value=today();$('#e-to').value=today();renderEarn()};
 /* ---------- users (admin) ---------- */
 function renderUsers(){
   const L=P.filter(p=>p.id!==ME?.id);
@@ -664,21 +706,24 @@ $('#uf').addEventListener('submit',async e=>{e.preventDefault();
   }catch(err){$('#uErr').textContent=/registered/i.test(err.message)?'اسم الدخول ده مستخدم قبل كده':'حصلت مشكلة: '+err.message}finally{btn.disabled=false}});
 
 /* ---------- courier app ---------- */
-let CO=[],cSeq=LS.get('seq',[]),cBusy=false;
+let CD=[],CO=[],cSeq=LS.get('seq',[]),cBusy=false;
 function coords(s){s=String(s||'');const m=s.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/)||s.match(/[?&](?:q|ll|query|destination|daddr|center)=(?:loc:)?(-?\d+\.\d+)(?:,|%2C)\s*(-?\d+\.\d+)/i)||s.match(/(-?\d{1,2}\.\d{3,})\s*,\s*(-?\d{1,3}\.\d{3,})/);return m?[+m[1],+m[2]]:null}
 const hav=(a,b)=>{const R=6371,r=x=>x*Math.PI/180,dl=r(b[0]-a[0]),dn=r(b[1]-a[1]),h=Math.sin(dl/2)**2+Math.cos(r(a[0]))*Math.cos(r(b[0]))*Math.sin(dn/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
 const dest=o=>{const c=coords(o.loc);return c?c.join(','):[o.address,o.area,'مصر'].filter(Boolean).join('، ')};
 const starts=()=>String(S.starts||'').split('\n').map(l=>{const [n,...r]=l.split('|');return {n:(n||'').trim(),c:coords(r.join('|'))}}).filter(x=>x.n&&x.c);
 const pending=o=>!(o.report&&o.report.st);
 async function loadCourier(){
-  const [o,s]=await Promise.all([sb.from('orders').select('data').in('status',['new','out']).lte('date',today()).limit(500),sb.from('settings').select('data').eq('id',1).maybeSingle()]);
-  CO=chk(o).map(r=>r.data);if(s.data)S={...S,...s.data.data};
+  const [o,s,d]=await Promise.all([sb.from('orders').select('data').in('status',['new','out']).lte('date',today()).limit(500),sb.from('settings').select('data').eq('id',1).maybeSingle(),
+    sb.from('orders').select('data').eq('status','done').gte('date',monthStart()).limit(2000)]);
+  CO=chk(o).map(r=>r.data);if(s.data)S={...S,...s.data.data};CD=(d.data||[]).map(r=>r.data);
 }
 function renderCourier(){
   $('#cName').textContent=ME?.name||'';
   const st=$('#cStart'),v=st.value;st.innerHTML='<option value="gps">مكاني الحالي (GPS)</option>'+starts().map((x,i)=>`<option value="${i}">${esc(x.n)}</option>`).join('');if(v&&[...st.options].some(o=>o.value===v))st.value=v;
   const idx=id=>{const i=cSeq.indexOf(id);return i<0?1e6:i};
   const L=[...CO].sort((a,b)=>(pending(b)-pending(a))||idx(a.id)-idx(b.id)||String(a.area).localeCompare(String(b.area),'ar'));
+  const doneToday=CO.filter(o=>o.report?.st==='done').length+CD.filter(o=>o.date===today()).length,mE=CD.reduce((s,o)=>s+feeOf(o),0)+CO.filter(o=>o.report?.st==='done').length*num(S.cfee);
+  count('#cb1',doneToday*num(S.cfee),true);count('#cb2',mE,true);count('#cb3',CD.length+CO.filter(o=>o.report?.st==='done').length);$('#cbH').textContent=`${money(S.cfee)} عن كل أوردر بيتسلّم.`;
   count('#ck1',CO.length);count('#ck2',CO.filter(o=>o.report?.st==='done').length);count('#ck3',CO.filter(pending).reduce((s,o)=>s+num(o.total),0),true);
   let n=0;
   $('#cList').innerHTML=L.length?L.map(o=>{const r=o.report||{},p=pending(o),ph=digits(o.phone),wa='2'+ph.replace(/^\+?2?/,'');
