@@ -323,6 +323,7 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
         <label>رقم التواصل على البوليصة<input id="s-phone" dir="ltr" inputmode="tel"></label>
         <label>بادئة رقم البوليصة (حروف إنجليزي)<input id="s-prefix" dir="ltr" maxlength="5"></label>
         <label class="wide">عنوان المرسل<input id="s-address"></label>
+        <label class="wide">رسالة واتساب الجاهزة للمندوب (اكتب {الاسم} {رقم} {المبلغ} {العنوان} {البراند} وهتتبدل لوحدها)<textarea id="s-wa" dir="auto" style="min-height:110px"></textarea></label>
         <label class="wide">أماكن بداية خط السير (كل مكان في سطر: الاسم | لينك اللوكيشن)<textarea id="s-starts" dir="auto" placeholder="المخزن | https://maps.google.com/?q=30.05,31.33"></textarea></label>
         <label>مصاريف الشحن الافتراضية<input id="s-ship" type="number" min="0"></label>
         <label>أجرة المندوب عن كل أوردر متسلّم<input id="s-cfee" type="number" min="0"></label>
@@ -586,7 +587,7 @@ $('#s-logo').addEventListener('change',e=>{const f=e.target.files[0];if(!f)retur
 $('#lgDel').onclick=()=>{pendLogo='none';showLogo('')};
 function fillSettings(){showLogo(pendLogo==null?curLogo():pendLogo==='none'?'':pendLogo);
   ['brand','brandEn','phone','prefix','address','ship','size'].forEach(k=>$('#s-'+k).value=S[k]??'');
-  $('#s-cfee').value=S.cfee??0;$('#s-starts').value=S.starts||'';renderUsers();
+  $('#s-cfee').value=S.cfee??0;$('#s-starts').value=S.starts||'';$('#s-wa').value=S.wa||WA_DEF;renderUsers();
 }
 function courierOpts(){
   const cs=couriers(),o=cs.length?cs.map(c=>`<option>${esc(c)}</option>`).join(''):'<option value="">ضيف مندوب من الإعدادات</option>';
@@ -599,6 +600,8 @@ function count(sel,v,isM){const e=$(sel),f=isM?money:x=>Math.round(x).toLocaleSt
   if(RM||from===v){e.textContent=f(v);return}const t0=performance.now();cancelAnimationFrame(e._r);
   const step=t=>{const p=Math.min(1,(t-t0)/700),k=1-Math.pow(1-p,3);e.textContent=f(from+(v-from)*k);if(p<1)e._r=requestAnimationFrame(step)};e._r=requestAnimationFrame(step)}
 const TITLES={new:'بوليصة جديدة',orders:'الأوردرات',closing:'التقفيل اليومي',earn:'رصيد المندوب',settings:'الإعدادات'};
+const WA_DEF='أهلاً أستاذ {الاسم}، معاك مندوب {البراند}. أوردرك رقم {رقم} في الطريق ليك النهارده، والمبلغ المطلوب {المبلغ}. العنوان عندي: {العنوان}. ياريت تأكدلي العنوان أو تبعتلي اللوكيشن، وشكراً.';
+const waMsg=o=>String(S.wa||WA_DEF).replace(/\{الاسم\}/g,o.name||'').replace(/\{رقم\}/g,o.no||'').replace(/\{المبلغ\}/g,money(o.total)).replace(/\{العنوان\}/g,[o.area,o.address].filter(Boolean).join(' - ')).replace(/\{البراند\}/g,S.brand||'');
 const feeOf=o=>o.cfee!=null?num(o.cfee):num(S.cfee);
 const monthStart=()=>today().slice(0,8)+'01';
 function renderEarn(){
@@ -664,7 +667,7 @@ $('#hand').onclick=handOver;$('#settle').onclick=doSettle;
 $('#tC').addEventListener('click',e=>{const id=e.target.dataset?.r,x=C.find(c=>c.id===id);if(x)save(`تقفيل-${x.date}.html`,printDoc('تقفيل يوم',reportBody(x),TCSS,'size:A4;margin:0'))});
 $('#sf').addEventListener('submit',async e=>{e.preventDefault();
   S={...S,brand:$('#s-brand').value.trim()||'مودرن سواك',brandEn:$('#s-brandEn').value.trim(),phone:$('#s-phone').value.trim(),prefix:$('#s-prefix').value.trim()||'MS',
-    address:$('#s-address').value.trim(),starts:$('#s-starts').value.trim(),ship:num($('#s-ship').value),cfee:num($('#s-cfee').value),size:$('#s-size').value,logo:pendLogo??S.logo??''};pendLogo=null;
+    address:$('#s-address').value.trim(),starts:$('#s-starts').value.trim(),wa:$('#s-wa').value.trim(),ship:num($('#s-ship').value),cfee:num($('#s-cfee').value),size:$('#s-size').value,logo:pendLogo??S.logo??''};pendLogo=null;
   try{await putSettings();toast('اتحفظت الإعدادات');render()}catch(err){fail(err)}});
 window.addEventListener('hashchange',route);
 
@@ -733,7 +736,7 @@ function renderCourier(){
    <div class="ad2">${o.area?`<b>${esc(o.area)}</b> — `:''}${esc(o.address)}</div>
    ${o.items?`<div class="hint">الأوردر: ${esc(o.items)} (${esc(o.qty)} قطعة)</div>`:''}${o.notes?`<div class="hint">ملاحظة: ${esc(o.notes)}</div>`:''}
    <div class="amt">${money(o.total)}</div>
-   <div class="acts"><a class="call" href="tel:${esc(ph)}">📞 اتصال</a><a class="wa" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">واتساب</a>
+   <div class="acts"><a class="call" href="tel:${esc(ph)}">📞 اتصال</a><a class="wa" href="https://wa.me/${esc(wa)}?text=${encodeURIComponent(waMsg(o))}" target="_blank" rel="noopener">واتساب</a>
    <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest(o))}" target="_blank" rel="noopener">🧭 الخريطة</a>${o.phone2?`<a href="tel:${esc(o.phone2)}">📞 رقم تاني</a>`:''}</div>
    <div class="res"><button data-r="${esc(o.id)}" data-v="done" class="${r.st==='done'?'on1':''}">اتسلّم</button><button data-r="${esc(o.id)}" data-v="ret" class="${r.st==='ret'?'on2':''}">مرتجع</button><button data-r="${esc(o.id)}" data-v="post" class="${r.st==='post'?'on3':''}">مؤجل</button></div>
    ${r.st?`<div class="hint" style="margin-top:8px">${r.st!=='post'?'اتحصّل: '+money(r.amt)+' · ':''}<a href="#" data-undo="${esc(o.id)}">تراجع</a></div>`:''}</div>`}).join('')
