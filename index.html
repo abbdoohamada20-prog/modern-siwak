@@ -719,7 +719,7 @@ async function loadCourier(){
   CO=chk(o).map(r=>r.data);if(s.data)S={...S,...s.data.data};CD=(d.data||[]).map(r=>r.data);
 }
 function renderCourier(){
-  $('#cName').textContent=ME?.name||'';
+  $('#cName').textContent='';
   const st=$('#cStart'),v=st.value;st.innerHTML='<option value="gps">مكاني الحالي (GPS)</option>'+starts().map((x,i)=>`<option value="${i}">${esc(x.n)}</option>`).join('');if(v&&[...st.options].some(o=>o.value===v))st.value=v;
   const idx=id=>{const i=cSeq.indexOf(id);return i<0?1e6:i};
   const L=[...CO].sort((a,b)=>(pending(b)-pending(a))||idx(a.id)-idx(b.id)||String(a.area).localeCompare(String(b.area),'ar'));
