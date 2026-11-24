@@ -387,7 +387,7 @@ async function putOrders(list){chk(await sb.from('orders').upsert(list.map(row))
 async function delOrder(id){chk(await sb.from('orders').delete().eq('id',id));O=O.filter(x=>x.id!==id);render()}
 async function putClosing(c){chk(await sb.from('closings').upsert({id:c.id,data:c}));C.push(c);render()}
 async function putSettings(){chk(await sb.from('settings').upsert({id:1,data:S}))}
-const fail=e=>{toast('حصلت مشكلة: '+(e?.message||'جرّب تاني'));console.error(e)};
+const fail=async e=>{console.error(e);if(/row-level security|JWT|not allowed/i.test(e?.message||'')){const {data:{session}}=await sb.auth.getSession();if(!session||session.user.id!==ME?.id){clearInterval(pollT);ME=null;showLogin('الدخول اتغيّر أو انتهى (غالباً اتسجّل دخول بحساب تاني على نفس المتصفح). سجّل دخولك تاني، وبياناتك محفوظة.');return}toast('الحساب ده مش مسموحله يعمل الخطوة دي');return}toast('حصلت مشكلة: '+(e?.message||'جرّب تاني'))};
 async function loadAdmin(){
   const since=addDay(today(),-90);
   const [o,s,c,p]=await Promise.all([
