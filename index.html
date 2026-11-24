@@ -510,8 +510,8 @@ function renderOrders(){
 function renderClosing(){
   const d=$('#c-date').value||today(),c=$('#c-courier').value;
   const H=O.filter(o=>o.date===d&&o.status==='new');
-  H.forEach(o=>{if(!handSel.has('x'+o.id)){handSel.add(o.id);handSel.add('x'+o.id)}});
-  $('#tH').innerHTML=`<thead><tr><th></th><th>رقم البوليصة</th><th>العميل</th><th>المنطقة</th><th class="n">المبلغ</th><th>المندوب</th></tr></thead><tbody>`+
+  const allH=H.length&&H.every(o=>handSel.has(o.id));
+  $('#tH').innerHTML=`<thead><tr><th><input type="checkbox" id="hAll" ${allH?'checked':''} style="width:22px;min-height:0" aria-label="تحديد الكل"></th><th>رقم البوليصة</th><th>العميل</th><th>المنطقة</th><th class="n">المبلغ</th><th>المندوب</th></tr></thead><tbody>`+
    (H.length?H.map(o=>`<tr><td><input type="checkbox" data-h="${esc(o.id)}" ${handSel.has(o.id)?'checked':''} style="width:22px;min-height:0" aria-label="تسليم"></td><td><span class="no">${esc(o.no)}</span></td><td>${esc(o.name)}</td><td>${esc(o.area)}</td><td class="n">${money(o.total)}</td><td>${esc(o.courier||'—')}</td></tr>`).join('')
    :`<tr><td colspan="6" class="empty">مفيش أوردرات جديدة لليوم ده مستنية التسليم.</td></tr>`)+'</tbody>';
   const nH=H.filter(o=>handSel.has(o.id)).length;$('#hand').disabled=!nH||!c;$('#hand').textContent=`تسليم ${nH||''} أوردر لـ ${c||'المندوب'} + كشف التسليم`;
@@ -656,7 +656,7 @@ $('#csv').onclick=()=>{
   save(`اوردرات-${today()}.csv`,'﻿'+[h.map(q).join(','),...rows].join('\r\n'));
 };
 $('#c-date').addEventListener('input',renderClosing);$('#c-courier').addEventListener('input',renderClosing);
-$('#tH').addEventListener('change',e=>{const id=e.target.dataset.h;if(id){e.target.checked?handSel.add(id):handSel.delete(id);renderClosing()}});
+$('#tH').addEventListener('change',e=>{if(e.target.id==='hAll'){const d=$('#c-date').value;O.filter(o=>o.date===d&&o.status==='new').forEach(o=>e.target.checked?handSel.add(o.id):handSel.delete(o.id));renderClosing();return}const id=e.target.dataset.h;if(id){e.target.checked?handSel.add(id):handSel.delete(id);renderClosing()}});
 $('#tS').addEventListener('change',e=>{const t=e.target,id=t.dataset.s||t.dataset.a||t.dataset.w;if(!id||!settle[id])return;const o=O.find(x=>x.id===id);
   if(t.dataset.s){settle[id].st=t.value;settle[id].amt=t.value==='done'?o.total:0}
   if(t.dataset.a)settle[id].amt=num(t.value);if(t.dataset.w)settle[id].why=t.value;renderClosing()});
