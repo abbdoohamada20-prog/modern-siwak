@@ -714,7 +714,7 @@ const dest=o=>{const c=coords(o.loc);return c?c.join(','):[o.address,o.area,'Ù…Ø
 const starts=()=>String(S.starts||'').split('\n').map(l=>{const [n,...r]=l.split('|');return {n:(n||'').trim(),c:coords(r.join('|'))}}).filter(x=>x.n&&x.c);
 const pending=o=>!(o.report&&o.report.st);
 async function loadCourier(){
-  const [o,s,d]=await Promise.all([sb.from('orders').select('data').in('status',['new','out']).lte('date',today()).limit(500),sb.from('settings').select('data').eq('id',1).maybeSingle(),
+  const [o,s,d]=await Promise.all([sb.from('orders').select('data').eq('status','out').limit(500),sb.from('settings').select('data').eq('id',1).maybeSingle(),
     sb.from('orders').select('data').eq('status','done').gte('date',monthStart()).limit(2000)]);
   CO=chk(o).map(r=>r.data);if(s.data)S={...S,...s.data.data};CD=(d.data||[]).map(r=>r.data);
 }
