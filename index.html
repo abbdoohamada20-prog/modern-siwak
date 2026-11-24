@@ -600,7 +600,7 @@ function count(sel,v,isM){const e=$(sel),f=isM?money:x=>Math.round(x).toLocaleSt
   if(RM||from===v){e.textContent=f(v);return}const t0=performance.now();cancelAnimationFrame(e._r);
   const step=t=>{const p=Math.min(1,(t-t0)/700),k=1-Math.pow(1-p,3);e.textContent=f(from+(v-from)*k);if(p<1)e._r=requestAnimationFrame(step)};e._r=requestAnimationFrame(step)}
 const TITLES={new:'بوليصة جديدة',orders:'الأوردرات',closing:'التقفيل اليومي',earn:'رصيد المندوب',settings:'الإعدادات'};
-const WA_DEF='أهلاً أستاذ {الاسم}، معاك مندوب {البراند}. أوردرك رقم {رقم} في الطريق ليك النهارده، والمبلغ المطلوب {المبلغ}. العنوان عندي: {العنوان}. ياريت تأكدلي العنوان أو تبعتلي اللوكيشن، وشكراً.';
+const WA_DEF='السلام عليكم، أهلاً أستاذ {الاسم}، معاك مندوب {البراند}. أوردرك رقم {رقم} في الطريق ليك النهارده، والمبلغ المطلوب {المبلغ}. العنوان عندي: {العنوان}. ياريت تأكدلي العنوان أو تبعتلي اللوكيشن، وشكراً.';
 const waMsg=o=>String(S.wa||WA_DEF).replace(/\{الاسم\}/g,o.name||'').replace(/\{رقم\}/g,o.no||'').replace(/\{المبلغ\}/g,money(o.total)).replace(/\{العنوان\}/g,[o.area,o.address].filter(Boolean).join(' - ')).replace(/\{البراند\}/g,S.brand||'');
 const feeOf=o=>o.cfee!=null?num(o.cfee):num(S.cfee);
 const monthStart=()=>today().slice(0,8)+'01';
