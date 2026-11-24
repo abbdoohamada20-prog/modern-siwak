@@ -806,6 +806,7 @@ async function boot(){
 (async()=>{
   if(!window.supabase||!CFG.url||/YOUR/.test(CFG.url)){show('login');$('#lf').innerHTML='<h1>البوالص</h1><p>الموقع محتاج يتربط بقاعدة البيانات: افتح ملف config.js وحط فيه بيانات Supabase.</p>';return}
   sb=supabase.createClient(CFG.url,CFG.key);
+  sb.auth.onAuthStateChange((ev,s)=>{if(ME&&(!s||s.user.id!==ME.id))setTimeout(()=>location.reload(),50)});
   try{await boot()}catch(e){showLogin('مقدرتش أوصل للسيرفر. اتأكد من النت وجرّب تاني.')}
 })();
 }
