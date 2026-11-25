@@ -272,7 +272,7 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
     <div class="card">
       <h2>التقفيل اليومي</h2>
       <div class="filters">
-        <label>اليوم<input type="date" id="c-date"></label>
+        <label hidden>اليوم<input type="date" id="c-date"></label>
         <label>المندوب<select id="c-courier"></select></label>
       </div>
     </div>
@@ -284,7 +284,7 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
     </div>
     <div class="card">
       <h3>٢. تقفيل الحساب (لما يرجع)</h3>
-      <p style="margin:0 0 10px;color:var(--mute);font-size:14px">حدد نتيجة كل أوردر والمبلغ اللي اتحصّل. المؤجل بيتنقل تلقائياً لليوم اللي بعده.</p>
+      <p style="margin:0 0 10px;color:var(--mute);font-size:14px">حدد نتيجة كل أوردر والمبلغ اللي اتحصّل. المؤجل بيرجع للأوردرات الجديدة عشان تسلّمه تاني وقت ما تحب.</p>
       <div class="scroll"><table class="stack" id="tS"></table></div>
       <div class="sum" id="sSum"></div>
       <div class="btns"><button class="pri" id="settle" disabled>تقفيل اليوم + طباعة التقرير</button></div>
@@ -509,22 +509,22 @@ function renderOrders(){
 
 /* ---------- closing ---------- */
 function renderClosing(){
-  const d=$('#c-date').value||today(),c=$('#c-courier').value;
-  const H=O.filter(o=>o.date<=d&&o.status==='new');
+  const d=today(),c=$('#c-courier').value;
+  const H=O.filter(o=>o.status==='new');
   const allH=H.length&&H.every(o=>handSel.has(o.id));
   $('#tH').innerHTML=`<thead><tr><th><input type="checkbox" id="hAll" ${allH?'checked':''} style="width:22px;min-height:0" aria-label="تحديد الكل"></th><th>رقم البوليصة</th><th>العميل</th><th>المنطقة</th><th class="n">المبلغ</th><th>المندوب</th></tr></thead><tbody>`+
    (H.length?H.map(o=>`<tr><td><input type="checkbox" data-h="${esc(o.id)}" ${handSel.has(o.id)?'checked':''} style="width:22px;min-height:0" aria-label="تسليم"></td><td><span class="no">${esc(o.no)}</span></td><td>${esc(o.name)}</td><td>${esc(o.area)}</td><td class="n">${money(o.total)}</td><td>${esc(o.courier||'—')}</td></tr>`).join('')
-   :`<tr><td colspan="6" class="empty">مفيش أوردرات جديدة لليوم ده مستنية التسليم.</td></tr>`)+'</tbody>';
+   :`<tr><td colspan="6" class="empty">مفيش أوردرات جديدة مستنية التسليم.</td></tr>`)+'</tbody>';
   const nH=H.filter(o=>handSel.has(o.id)).length;$('#hand').disabled=!nH||!c;$('#hand').textContent=`تسليم ${nH||''} أوردر لـ ${c||'المندوب'} + كشف التسليم`;
 
-  const X=O.filter(o=>o.date===d&&o.status==='out'&&o.courier===c);
+  const X=O.filter(o=>o.status==='out'&&o.courier===c);
   $('#tS').innerHTML=`<thead><tr><th>رقم البوليصة</th><th>العميل</th><th class="n">المطلوب</th><th>النتيجة</th><th>اتحصّل</th><th>سبب / ملاحظة</th></tr></thead><tbody>`+
    (X.length?X.map(o=>{const r=settle[o.id]||(settle[o.id]=o.report&&o.report.st?{st:o.report.st,amt:num(o.report.amt),why:o.report.why||''}:{st:'done',amt:o.total,why:''});
    return `<tr><td><span class="no">${esc(o.no)}</span></td><td>${esc(o.name)}<div style="font-size:13px;color:var(--mute)">${esc(o.area)}</div>${o.report&&o.report.st?`<div class="rep">المندوب علّم: ${ST[o.report.st]?.[0]||''}</div>`:''}</td><td class="n">${money(o.total)}</td>
    <td><select data-s="${esc(o.id)}" aria-label="النتيجة"><option value="done" ${r.st==='done'?'selected':''}>تم التسليم</option><option value="ret" ${r.st==='ret'?'selected':''}>مرتجع</option><option value="post" ${r.st==='post'?'selected':''}>مؤجل لبكرة</option></select></td>
    <td><input type="number" min="0" data-a="${esc(o.id)}" value="${esc(r.amt)}" aria-label="المبلغ المحصل" style="max-width:120px"></td>
    <td><input data-w="${esc(o.id)}" value="${esc(r.why)}" placeholder="اختياري" aria-label="ملاحظة"></td></tr>`}).join('')
-   :`<tr><td colspan="6" class="empty">مفيش أوردرات مع ${esc(c||'المندوب')} في اليوم ده مستنية التقفيل.</td></tr>`)+'</tbody>';
+   :`<tr><td colspan="6" class="empty">مفيش أوردرات مع ${esc(c||'المندوب')} مستنية التقفيل.</td></tr>`)+'</tbody>';
   const t=totals(X);
   $('#sSum').innerHTML=`<div>اتسلّم<b>${t.done}</b></div><div>مرتجع<b>${t.ret}</b></div><div>مؤجل<b>${t.post}</b></div><div>إجمالي المحصّل<b>${money(t.col)}</b></div><div>أجرة المندوب<b>${money(t.fee)}</b></div><div class="due">المطلوب من المندوب<b>${money(t.due)}</b></div>`;
   $('#settle').disabled=!X.length;
@@ -539,8 +539,8 @@ function totals(X){
   t.fee=t.done*num(S.cfee);t.due=t.col-t.fee;return t;
 }
 async function handOver(){
-  const d=$('#c-date').value,c=$('#c-courier').value;
-  const L=O.filter(o=>o.date<=d&&o.status==='new'&&handSel.has(o.id));if(!L.length)return;
+  const d=today(),c=$('#c-courier').value;
+  const L=O.filter(o=>o.status==='new'&&handSel.has(o.id));if(!L.length)return;
   if(!await ask(`تسليم ${L.length} أوردر لـ ${c}؟`))return;
   try{const up=L.map(o=>{const {report,...b}=o;return {...b,status:'out',courier:c,date:d,handedAt:Date.now()}});await putOrders(up);
     const sum=up.reduce((s,o)=>s+num(o.total),0);
@@ -561,13 +561,13 @@ function reportBody(x){
   <div class="sig"><span>توقيع المندوب: ....................</span><span>استلم المبلغ: ....................</span></div></div>`;
 }
 async function doSettle(){
-  const d=$('#c-date').value,c=$('#c-courier').value;
-  const X=O.filter(o=>o.date===d&&o.status==='out'&&o.courier===c);if(!X.length)return;
+  const d=today(),c=$('#c-courier').value;
+  const X=O.filter(o=>o.status==='out'&&o.courier===c);if(!X.length)return;
   const t=totals(X);
   if(!await ask(`تقفيل يوم ${c}: ${t.done} اتسلّم، ${t.ret} مرتجع، ${t.post} مؤجل — المطلوب منه ${money(t.due)}؟`))return;
   try{
     const rows=[],up=X.map(o=>{const r={st:'done',amt:o.total,why:'',...settle[o.id]};rows.push({no:o.no,name:o.name,total:o.total,st:r.st,amt:num(r.amt),why:r.why});
-      const {report,...b}=o;if(r.st==='post')return {...b,status:'new',date:addDay(d,1),postponed:(o.postponed||0)+1,lastNote:r.why};
+      const {report,...b}=o;if(r.st==='post')return {...b,status:'new',date:d,postponed:(o.postponed||0)+1,lastNote:r.why};
       return {...b,status:r.st,collected:num(r.amt),settledAt:Date.now(),lastNote:r.why,cfee:r.st==='done'?num(S.cfee):0}});
     await putOrders(up);
     const x={id:`${d}_${hash(c)}_${Date.now().toString(36)}`,date:d,courier:c,at:Date.now(),rows,...t};
@@ -659,7 +659,7 @@ $('#csv').onclick=()=>{
   save(`اوردرات-${today()}.csv`,'﻿'+[h.map(q).join(','),...rows].join('\r\n'));
 };
 $('#c-date').addEventListener('input',renderClosing);$('#c-courier').addEventListener('input',renderClosing);
-$('#tH').addEventListener('change',e=>{if(e.target.id==='hAll'){const d=$('#c-date').value;O.filter(o=>o.date<=(d||today())&&o.status==='new').forEach(o=>e.target.checked?handSel.add(o.id):handSel.delete(o.id));renderClosing();return}const id=e.target.dataset.h;if(id){e.target.checked?handSel.add(id):handSel.delete(id);renderClosing()}});
+$('#tH').addEventListener('change',e=>{if(e.target.id==='hAll'){const d=$('#c-date').value;O.filter(o=>o.status==='new').forEach(o=>e.target.checked?handSel.add(o.id):handSel.delete(o.id));renderClosing();return}const id=e.target.dataset.h;if(id){e.target.checked?handSel.add(id):handSel.delete(id);renderClosing()}});
 $('#tS').addEventListener('change',e=>{const t=e.target,id=t.dataset.s||t.dataset.a||t.dataset.w;if(!id||!settle[id])return;const o=O.find(x=>x.id===id);
   if(t.dataset.s){settle[id].st=t.value;settle[id].amt=t.value==='done'?o.total:0}
   if(t.dataset.a)settle[id].amt=num(t.value);if(t.dataset.w)settle[id].why=t.value;renderClosing()});
