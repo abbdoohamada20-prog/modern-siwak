@@ -141,6 +141,7 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
 .res button{border:1.5px solid var(--line);background:transparent}.res button.on1{background:#2fa36b;color:#fff;border-color:#2fa36b}.res button.on2{background:#d0442f;color:#fff;border-color:#d0442f}.res button.on3{background:#8b5cd6;color:#fff;border-color:#8b5cd6}
 .rlinks a{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--lime);color:var(--green);text-decoration:none;font-weight:700;border-radius:14px;padding:14px 16px;margin-top:10px;animation:pop .35s both}
 .hint{font-size:13px;color:var(--mute)}
+.ctabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}.ctabs button{background:var(--card);border:1.5px solid var(--line);font-weight:700}.ctabs button.on{background:var(--lime);color:var(--green);border-color:var(--lime)}
 .rep{font-size:13px;font-weight:500;color:#5b3497}
 @keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -175,8 +176,14 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
 </div>
 <div id="cApp" class="capp" hidden>
   <div class="chead"><div class="logo"><svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="14" fill="#c6e35a"/><path d="M12 18l12-6 12 6-12 6-12-6z" fill="#0d3b2b"/><path d="M12 18v13l12 6V24z" fill="#0d3b2b" opacity=".75"/><path d="M36 18v13l-12 6V24z" fill="#0d3b2b" opacity=".5"/></svg><div><b>أوردراتي</b><small id="cName"></small></div></div><button class="ghost sm" id="cOut">خروج</button></div>
+  <div class="ctabs"><button data-ct="o" class="on">أوردراتي</button><button data-ct="b">رصيدي</button></div>
+  <div id="cB" hidden>
+    <div class="ckp"><div>رصيد النهارده<b id="cb1">0</b></div><div>رصيد الشهر<b id="cb2">0</b></div><div>أوردرات الشهر<b id="cb3">0</b></div></div>
+    <p class="hint" id="cbH" style="margin:0 4px 12px"></p>
+    <div id="cBL"></div>
+  </div>
+  <div id="cO">
   <div class="ckp"><div>أوردرات معايا<b id="ck1">0</b></div><div>اتسلّم<b id="ck2">0</b></div><div>المطلوب تحصيله<b id="ck3">0</b></div></div>
-  <div class="card" style="padding:16px"><h3 style="margin-bottom:8px">رصيدي</h3><div class="ckp" style="margin:0"><div>النهارده<b id="cb1">0</b></div><div>الشهر ده<b id="cb2">0</b></div><div>أوردرات الشهر<b id="cb3">0</b></div></div><p class="hint" id="cbH" style="margin:8px 0 0"></p></div>
   <div class="card">
     <h3>خط السير</h3>
     <label>هبدأ منين؟<select id="cStart"></select></label>
@@ -185,6 +192,7 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
     <p class="hint" id="cHint"></p>
   </div>
   <div id="cList"></div>
+  </div>
 </div>
 <div class="app" id="aApp" hidden>
 <aside class="side">
@@ -720,7 +728,7 @@ const starts=()=>String(S.starts||'').split('\n').map(l=>{const [n,...r]=l.split
 const pending=o=>!(o.report&&o.report.st);
 async function loadCourier(){
   const [o,s,d]=await Promise.all([sb.from('orders').select('data').eq('status','out').limit(500),sb.from('settings').select('data').eq('id',1).maybeSingle(),
-    sb.from('orders').select('data').eq('status','done').gte('date',monthStart()).limit(2000)]);
+    sb.from('orders').select('data').eq('status','done').gte('updated_at',monthStart()+'T00:00:00').limit(2000)]);
   CO=chk(o).map(r=>r.data);if(s.data)S={...S,...s.data.data};CD=(d.data||[]).map(r=>r.data);
 }
 function renderCourier(){
@@ -728,8 +736,10 @@ function renderCourier(){
   const st=$('#cStart'),v=st.value;st.innerHTML='<option value="gps">مكاني الحالي (GPS)</option>'+starts().map((x,i)=>`<option value="${i}">${esc(x.n)}</option>`).join('');if(v&&[...st.options].some(o=>o.value===v))st.value=v;
   const idx=id=>{const i=cSeq.indexOf(id);return i<0?1e6:i};
   const L=[...CO].sort((a,b)=>(pending(b)-pending(a))||idx(a.id)-idx(b.id)||String(a.area).localeCompare(String(b.area),'ar'));
-  const doneToday=CO.filter(o=>o.report?.st==='done').length+CD.filter(o=>o.date===today()).length,mE=CD.reduce((s,o)=>s+feeOf(o),0)+CO.filter(o=>o.report?.st==='done').length*num(S.cfee);
-  count('#cb1',doneToday*num(S.cfee),true);count('#cb2',mE,true);count('#cb3',CD.length+CO.filter(o=>o.report?.st==='done').length);$('#cbH').textContent=`${money(S.cfee)} عن كل أوردر بيتسلّم.`;
+  const sd=o=>o.settledAt?new Date(o.settledAt).toLocaleDateString('en-CA'):o.date,mo=today().slice(0,7),CM=CD.filter(o=>String(sd(o)).startsWith(mo)),CT=CM.filter(o=>sd(o)===today());
+  count('#cb1',CT.reduce((s,o)=>s+feeOf(o),0),true);count('#cb2',CM.reduce((s,o)=>s+feeOf(o),0),true);count('#cb3',CM.length);$('#cbH').textContent=`${money(S.cfee)} عن كل أوردر اتسلّم واتقفل في التقفيل اليومي.`;
+  const g={};CM.forEach(o=>{(g[sd(o)]=g[sd(o)]||[]).push(o)});
+  $('#cBL').innerHTML=Object.keys(g).sort().reverse().map(d=>`<div class="card" style="padding:16px"><h3 style="display:flex;justify-content:space-between;gap:8px;margin:0"><span>${esc(fmtD(d))}</span><span style="color:var(--green2)">${money(g[d].reduce((s,o)=>s+feeOf(o),0))}</span></h3><div class="hint" style="margin-bottom:6px">${g[d].length} أوردر اتقفل</div>${g[d].map(o=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-top:1px solid var(--line)"><span><span class="no">${esc(o.no)}</span> · ${esc(o.name)}</span><b style="white-space:nowrap">+${money(feeOf(o))}</b></div>`).join('')}</div>`).join('')||'<div class="card empty">لسه مفيش أوردرات اتقفلت الشهر ده. الرصيد بيظهر بعد التقفيل اليومي.</div>';
   const pend=L.filter(pending),dn=L.filter(o=>o.report?.st==='done'),oth=L.filter(o=>o.report?.st==='ret'||o.report?.st==='post');
   count('#ck1',pend.length);count('#ck2',dn.length);count('#ck3',pend.reduce((s,o)=>s+num(o.total),0),true);
   let n=0;
@@ -779,6 +789,7 @@ $('#cRoute').onclick=async()=>{
   $('#cHint').textContent=nc.length?`${nc.length} أوردر من غير لوكيشن، اترتبوا حسب المنطقة في آخر الخط.`:'';
   btn.disabled=false;
 };
+$$('.ctabs button').forEach(b=>b.onclick=()=>{$$('.ctabs button').forEach(x=>x.classList.toggle('on',x===b));$('#cO').hidden=b.dataset.ct!=='o';$('#cB').hidden=b.dataset.ct!=='b'});
 $('#cRef').onclick=async()=>{try{await loadCourier();renderCourier();toast('اتحدّث')}catch(e){fail(e)}};
 
 /* ---------- auth + boot ---------- */
