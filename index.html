@@ -728,19 +728,23 @@ function renderCourier(){
   const L=[...CO].sort((a,b)=>(pending(b)-pending(a))||idx(a.id)-idx(b.id)||String(a.area).localeCompare(String(b.area),'ar'));
   const doneToday=CO.filter(o=>o.report?.st==='done').length+CD.filter(o=>o.date===today()).length,mE=CD.reduce((s,o)=>s+feeOf(o),0)+CO.filter(o=>o.report?.st==='done').length*num(S.cfee);
   count('#cb1',doneToday*num(S.cfee),true);count('#cb2',mE,true);count('#cb3',CD.length+CO.filter(o=>o.report?.st==='done').length);$('#cbH').textContent=`${money(S.cfee)} عن كل أوردر بيتسلّم.`;
-  count('#ck1',CO.length);count('#ck2',CO.filter(o=>o.report?.st==='done').length);count('#ck3',CO.filter(pending).reduce((s,o)=>s+num(o.total),0),true);
+  const pend=L.filter(pending),dn=L.filter(o=>o.report?.st==='done'),oth=L.filter(o=>o.report?.st==='ret'||o.report?.st==='post');
+  count('#ck1',pend.length);count('#ck2',dn.length);count('#ck3',pend.reduce((s,o)=>s+num(o.total),0),true);
   let n=0;
-  $('#cList').innerHTML=L.length?L.map(o=>{const r=o.report||{},p=pending(o),ph=digits(o.phone),wa='2'+ph.replace(/^\+?2?/,'');
+  const card=o=>{const r=o.report||{},p=pending(o),ph=digits(o.phone),wa='2'+ph.replace(/^\+?2?/,'');
    return `<div class="stop ${r.st==='done'?'ok':r.st==='ret'?'bad':r.st==='post'?'wait':''}">${p?`<span class="sq">${++n}</span>`:''}
    <h3>${esc(o.name)}</h3><div class="hint"><span class="no">${esc(o.no)}</span></div>
    <div class="ad2">${o.area?`<b>${esc(o.area)}</b> — `:''}${esc(o.address)}</div>
+   <div class="hint">📞 <span dir="ltr">${esc(o.phone)}${o.phone2?' / '+esc(o.phone2):''}</span></div>
    ${o.items?`<div class="hint">الأوردر: ${esc(o.items)} (${esc(o.qty)} قطعة)</div>`:''}${o.notes?`<div class="hint">ملاحظة: ${esc(o.notes)}</div>`:''}
    <div class="amt">${money(o.total)}</div>
-   <div class="acts"><a class="call" href="tel:${esc(ph)}">📞 اتصال</a><a class="wa" href="https://wa.me/${esc(wa)}?text=${encodeURIComponent(waMsg(o))}" target="_blank" rel="noopener">واتساب</a>
+   ${p?`<div class="acts"><a class="call" href="tel:${esc(ph)}">📞 اتصال</a><a class="wa" href="https://wa.me/${esc(wa)}?text=${encodeURIComponent(waMsg(o))}" target="_blank" rel="noopener">واتساب</a>
    <a href="https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest(o))}" target="_blank" rel="noopener">🧭 الخريطة</a>${o.phone2?`<a href="tel:${esc(o.phone2)}">📞 رقم تاني</a>`:''}</div>
-   <div class="res"><button data-r="${esc(o.id)}" data-v="done" class="${r.st==='done'?'on1':''}">اتسلّم</button><button data-r="${esc(o.id)}" data-v="ret" class="${r.st==='ret'?'on2':''}">مرتجع</button><button data-r="${esc(o.id)}" data-v="post" class="${r.st==='post'?'on3':''}">مؤجل</button></div>
-   ${r.st?`<div class="hint" style="margin-top:8px">${r.st!=='post'?'اتحصّل: '+money(r.amt)+' · ':''}<a href="#" data-undo="${esc(o.id)}">تراجع</a></div>`:''}</div>`}).join('')
-   :'<div class="card empty">مفيش أوردرات معاك دلوقتي. لما الأدمن يسلّمك أوردرات هتظهر هنا.</div>';
+   <div class="res"><button data-r="${esc(o.id)}" data-v="done">اتسلّم</button><button data-r="${esc(o.id)}" data-v="ret">مرتجع</button><button data-r="${esc(o.id)}" data-v="post">مؤجل</button></div>`
+   :`<div class="hint" style="margin-top:8px"><b>${ST[r.st]?.[0]||''}</b>${r.st!=='post'?' · اتحصّل: '+money(r.amt):''}${r.why?' · '+esc(r.why):''} · <a href="#" data-undo="${esc(o.id)}">تراجع</a></div>`}</div>`};
+  const sec=(t,arr,extra)=>arr.length?`<h3 style="margin:22px 4px 10px">${t} (${arr.length})${extra?` — ${extra}`:''}</h3>`+arr.map(card).join(''):'';
+  $('#cList').innerHTML=(pend.length?pend.map(card).join(''):(dn.length||oth.length?'<div class="card empty">خلصت كل الأوردرات اللي معاك.</div>':'<div class="card empty">مفيش أوردرات معاك دلوقتي. لما الأدمن يسلّمك أوردرات هتظهر هنا.</div>'))
+   +sec('تم التوصيل',dn,'اتحصّل '+money(dn.reduce((s,o)=>s+num(o.report.amt),0)))+sec('مرتجع / مؤجل',oth);
 }
 async function report(id,st,amt,why){
   if(cBusy)return;cBusy=true;
