@@ -261,6 +261,7 @@ dialog::backdrop{background:rgba(8,20,15,.5);backdrop-filter:blur(3px)}
       </div>
       <div class="btns">
         <button class="pri" id="pSel" disabled>طباعة المحدد</button>
+        <select id="q-courier" aria-label="المندوب" style="width:auto;margin:0"></select><button class="pri" id="hSel" disabled>تسليم المحدد للمندوب</button>
         <button class="ghost" id="csv">تصدير Excel (CSV)</button>
         <span id="qCount" style="color:var(--mute);font-size:14px"></span>
       </div>
@@ -498,7 +499,7 @@ function renderOrders(){
   const L=filtered();
   $('#qCount').textContent=`${L.length} أوردر — إجمالي ${money(L.reduce((s,o)=>s+num(o.total),0))}`;
   sel.forEach(id=>{if(!O.some(o=>o.id===id))sel.delete(id)});
-  $('#pSel').disabled=!sel.size;$('#pSel').textContent=sel.size?`طباعة المحدد (${sel.size})`:'طباعة المحدد';
+  const sn=O.filter(o=>sel.has(o.id)&&o.status==='new').length;$('#hSel').disabled=!sn;$('#hSel').textContent=sn?`تسليم ${sn} أوردر للمندوب`:'تسليم المحدد للمندوب';$('#pSel').disabled=!sel.size;$('#pSel').textContent=sel.size?`طباعة المحدد (${sel.size})`:'طباعة المحدد';
   $('#tO').innerHTML=`<thead><tr><th><input type="checkbox" id="selAll" aria-label="تحديد الكل" style="width:20px;min-height:0"></th><th>رقم البوليصة</th><th>العميل</th><th>الموبايل</th><th>المنطقة</th><th class="n">المبلغ</th><th>الحالة</th><th>التوصيل</th><th></th></tr></thead><tbody>`+
   (L.length?L.map(o=>`<tr><td><input type="checkbox" data-sel="${esc(o.id)}" ${sel.has(o.id)?'checked':''} style="width:20px;min-height:0" aria-label="تحديد"></td>
   <td><span class="no">${esc(o.no)}</span></td><td>${esc(o.name)}</td><td dir="ltr" style="text-align:right">${esc(o.phone)}</td><td>${esc(o.area)}</td>
@@ -538,9 +539,9 @@ function totals(X){
   const t={done:0,ret:0,post:0,col:0};X.forEach(o=>{const r=settle[o.id]||{st:'done',amt:o.total};t[r.st]++;if(r.st!=='post')t.col+=num(r.amt)});
   t.fee=t.done*num(S.cfee);t.due=t.col-t.fee;return t;
 }
-async function handOver(){
-  const d=today(),c=$('#c-courier').value;
-  const L=O.filter(o=>o.status==='new'&&handSel.has(o.id));if(!L.length)return;
+async function handOver(ids,cc){
+  const d=today(),c=cc||$('#c-courier').value;
+  const L=O.filter(o=>o.status==='new'&&(ids||handSel).has(o.id));if(!L.length)return;if(!c){toast('اختار المندوب الأول');return}
   if(!await ask(`تسليم ${L.length} أوردر لـ ${c}؟`))return;
   try{const up=L.map(o=>{const {report,...b}=o;return {...b,status:'out',courier:c,date:d,handedAt:Date.now()}});await putOrders(up);
     const sum=up.reduce((s,o)=>s+num(o.total),0);
@@ -591,7 +592,7 @@ function fillSettings(){showLogo(pendLogo==null?curLogo():pendLogo==='none'?'':p
 }
 function courierOpts(){
   const cs=couriers(),o=cs.length?cs.map(c=>`<option>${esc(c)}</option>`).join(''):'<option value="">ضيف مندوب من الإعدادات</option>';
-  ['#o-courier','#c-courier'].forEach(s=>{const e=$(s),v=e.value;e.innerHTML=o;if(v&&cs.includes(v))e.value=v});
+  ['#o-courier','#c-courier','#q-courier'].forEach(s=>{const e=$(s),v=e.value;e.innerHTML=o;if(v&&cs.includes(v))e.value=v});
 }
 
 /* ---------- render ---------- */
@@ -663,7 +664,8 @@ $('#tH').addEventListener('change',e=>{if(e.target.id==='hAll'){const d=$('#c-da
 $('#tS').addEventListener('change',e=>{const t=e.target,id=t.dataset.s||t.dataset.a||t.dataset.w;if(!id||!settle[id])return;const o=O.find(x=>x.id===id);
   if(t.dataset.s){settle[id].st=t.value;settle[id].amt=t.value==='done'?o.total:0}
   if(t.dataset.a)settle[id].amt=num(t.value);if(t.dataset.w)settle[id].why=t.value;renderClosing()});
-$('#hand').onclick=handOver;$('#settle').onclick=doSettle;
+$('#hand').onclick=()=>handOver();
+$('#hSel').onclick=async()=>{await handOver(new Set(sel),$('#q-courier').value);O.forEach(o=>{if(o.status==='out')sel.delete(o.id)});renderOrders()};$('#settle').onclick=doSettle;
 $('#tC').addEventListener('click',e=>{const id=e.target.dataset?.r,x=C.find(c=>c.id===id);if(x)save(`تقفيل-${x.date}.html`,printDoc('تقفيل يوم',reportBody(x),TCSS,'size:A4;margin:0'))});
 $('#sf').addEventListener('submit',async e=>{e.preventDefault();
   S={...S,brand:$('#s-brand').value.trim()||'مودرن سواك',brandEn:$('#s-brandEn').value.trim(),phone:$('#s-phone').value.trim(),prefix:$('#s-prefix').value.trim()||'MS',
